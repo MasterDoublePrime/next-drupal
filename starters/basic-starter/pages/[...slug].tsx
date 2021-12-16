@@ -13,6 +13,8 @@ import {
 } from "next"
 import { NodeArticle } from "@/components/node-article"
 import { NodeBasicPage } from "@/components/node-basic-page"
+import { NodeProduct } from "@/components/node-product"
+import { DrupalJsonApiParams } from "drupal-jsonapi-params"
 
 interface NodePageProps {
   preview: GetStaticPropsContext["preview"]
@@ -49,13 +51,17 @@ export default function NodePage({ node, preview }: NodePageProps) {
       )}
       {node.type === "node--page" && <NodeBasicPage node={node} />}
       {node.type === "node--article" && <NodeArticle node={node} />}
+      {node.type === "node--product" && <NodeProduct node={node} />}
     </>
   )
 }
 
 export async function getStaticPaths(context): Promise<GetStaticPathsResult> {
   return {
-    paths: await getPathsFromContext(["node--article", "node--page"], context),
+    paths: await getPathsFromContext(
+      ["node--article", "node--page", "node--product"],
+      context
+    ),
     fallback: "blocking",
   }
 }
@@ -64,6 +70,7 @@ export async function getStaticProps(
   context
 ): Promise<GetStaticPropsResult<NodePageProps>> {
   const type = await getResourceTypeFromContext(context)
+  const params = new DrupalJsonApiParams()
 
   if (!type) {
     return {
@@ -71,11 +78,11 @@ export async function getStaticProps(
     }
   }
 
-  let params = {}
   if (type === "node--article") {
-    params = {
-      include: "field_image,uid",
-    }
+    params.addFields("node--article", ["field_image", "uid"])
+  }
+  if (type === "node--product") {
+    params.addFields("node--product", ["title", "body", "field_product_id"])
   }
 
   const node = await getResourceFromContext<DrupalNode>(type, context, {

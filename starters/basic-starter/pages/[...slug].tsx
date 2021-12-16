@@ -5,6 +5,7 @@ import {
   getPathsFromContext,
   getResourceFromContext,
   getResourceTypeFromContext,
+	getResourceCollection,
 } from "next-drupal"
 import {
   GetStaticPathsResult,
@@ -14,6 +15,7 @@ import {
 import { NodeArticle } from "@/components/node-article"
 import { NodeBasicPage } from "@/components/node-basic-page"
 import { NodeProduct } from "@/components/node-product"
+import { NodeMpp } from "@/components/node-mpp"
 import { DrupalJsonApiParams } from "drupal-jsonapi-params"
 
 interface NodePageProps {
@@ -52,6 +54,7 @@ export default function NodePage({ node, preview }: NodePageProps) {
       {node.type === "node--page" && <NodeBasicPage node={node} />}
       {node.type === "node--article" && <NodeArticle node={node} />}
       {node.type === "node--product" && <NodeProduct node={node} />}
+      {node.type === "node--mpp" && <NodeMpp node={node} />}
     </>
   )
 }
@@ -84,11 +87,13 @@ export async function getStaticProps(
   if (type === "node--product") {
     params.addFields("node--product", ["title", "body", "field_product_id"])
   }
+  if (type === "node--mpp") {
+    params.addFields("node--mpp", ["title", "body", "field_category_id"])
+  }
 
-  const node = await getResourceFromContext<DrupalNode>(type, context, {
-    params,
-  })
-
+  const node = await getResourceFromContext(type, context, {
+    params: { ...params.getQueryObject(), include: 'field_product' },
+  }) 
   if (!node?.status) {
     return {
       notFound: true,
